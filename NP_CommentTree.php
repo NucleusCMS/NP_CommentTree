@@ -27,7 +27,7 @@ class NP_CommentTree extends NucleusPlugin {
 
 	// version of the plugin
 	function getVersion() {
-		return '0.2';
+		return '0.3';
 	}
 
 	// a description to be shown on the installed plugins listing
@@ -51,10 +51,15 @@ class NP_CommentTree extends NucleusPlugin {
 		$this->createOption('e_items','List Item(close).','text','</li>');
 	}
 
-	function doSkinVar($skinType, $itemcnt = '5', $commentcnt = '4') {
+	function doSkinVar($skinType, $itemcnt = '5', $commentcnt = '4',$filter = '') {
 		
-		global $member, $manager, $CONF;
-		$b =& $manager->getBlog($CONF['DefaultBlog']);
+		global $member, $manager, $CONF, $blog;
+		if ($blog)
+			$b =& $blog;
+		else
+			$b =& $manager->getBlog($CONF['DefaultBlog']);
+		
+		$blogid = $b->getID();
 
 		if ($CONF['URLMode'] == 'pathinfo') {
 			 $blogurl = '' ;
@@ -64,13 +69,32 @@ class NP_CommentTree extends NucleusPlugin {
 		//format itemcnt
 		if ($itemcnt == "")
 			$itemcnt = 5;
+
+		$filter = trim($filter);
+		if($filter == 'current'){
+			$filter = 'cblog='.$blogid;
+		}elseif(strstr($filter,"=")){
+			$filter = str_replace("=","",$filter);
+			$filter = " cblog IN(".str_replace("/",",",$filter).")";
+		}elseif(strstr($filter,"<>")){
+			$filter = str_replace("<>","",$filter);
+			$filter = " cblog <>".str_replace("/"," or cblog<>",$filter);
+		}
 		
 		//get 5 items which have comments
-		$query = 'SELECT distinct citem FROM '.sql_table('comment').' ORDER BY cnumber DESC LIMIT 0,'.intval($itemcnt);
+		$query = 'SELECT distinct citem FROM '.sql_table('comment');
+		if($filter != ''){
+			$query .= " WHERE ".$filter;
+		}
+		$query .= ' ORDER BY cnumber DESC LIMIT 0,'.intval($itemcnt);
 		$res = mysql_query($query);
 		$i = 0;
 		while($row = mysql_fetch_object($res)){
-			
+			//set 5 item's title
+			$item =& $manager->getItem(intval($row->citem));
+			$title[$i] = strip_tags($item['title']);
+			$number[$i] = $item['itemid'];
+/*
 			//set 5 item's title
 			$query_item = 'SELECT inumber,ititle FROM '.sql_table('item').' WHERE inumber='.intval($row->citem);
 			$res_item = mysql_query($query_item);
@@ -79,7 +103,7 @@ class NP_CommentTree extends NucleusPlugin {
 				$title[$i] = strip_tags($row_item->ititle);
 				$number[$i] = intval($row_item->inumber);
 			}
-
+*/
 			$i++;
 		}
 
