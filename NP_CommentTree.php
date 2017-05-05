@@ -10,7 +10,7 @@ class NP_CommentTree extends NucleusPlugin {
 	function getName() {return 'Comment Tree';}
 	function getAuthor(){return 'mas + nakahara21 + taka + yu';}
 	function getURL(){return 'http://japan.nucleuscms.org/bb/viewtopic.php?t=127';}
-	function getVersion() {return '1.0';}
+	function getVersion() {return '1.1';}
 	function getDescription() {return 'latest comments (and trackbacks) - tree style';}
 	function supportsFeature($what) {
 		switch($what){
@@ -22,27 +22,49 @@ class NP_CommentTree extends NucleusPlugin {
 	}
 	
 	function install () {
-		$this->createOption('tbflag','Show TrackBacks?','yesno','yes');
-		$this->createOption('s_lists','List.','text','<ul class="commenttree">');
+		$this->createOption('s_lists','List.','text','<ul class="nobullets">');
 		$this->createOption('e_lists','List (close).','text','</ul>');
-		$this->createOption('s_items','List Item.','text','<li class="%kind%">');
+		$this->createOption('s_items','List Item.','text','<li class="<%kind%>">');
 		$this->createOption('e_items','List Item (close).','text','</li>');
-		$this->createOption('item_format','Item Format.','text','%date% %name% %comment%');
+		$this->createOption('item_format','Item Format.','text','<%date%> <%name%> <%comment%>');
 		$this->createOption('date_format','Date Format.','text','m/d');
-		$this->createOption('comment_format','Comment Format.','text','"%content%"');
+		$this->createOption('comment_format','Comment Format.','text','"<%content%>"');
 		$this->createOption('title_len','Item title Length.','text','28');
 		$this->createOption('name_len','Name Length.','text','14');
 		$this->createOption('flg_quote','Comment Length.','select','diff','Item title - name length|diff|Same as title length|title');
 	}
+
+	function uninstall(){
+		$this->deleteOption('s_lists');
+		$this->deleteOption('e_lists');
+		$this->deleteOption('s_items');
+		$this->deleteOption('e_items');
+		$this->deleteOption('item_format');
+		$this->deleteOption('date_format');
+		$this->deleteOption('comment_format');
+		$this->deleteOption('title_len');
+		$this->deleteOption('name_len');
+		$this->deleteOption('flg_quote');
+	}
+
 
 	function init(){
 		$this->blockable = 0;
 		if($this->checkTBVersion()) $this->blockable = 1;
 	}
 
-	function doSkinVar($skinType, $itemcnt = '5', $commentcnt = '4', $mode = 'both', $filter = '') {
+	function doSkinVar($skinType, $itemcnt = '5', $commentcnt = '4', $TBorCm = 'all', $filter = '') {
 		global $member, $manager, $CONF, $blog;
-		if($mode == '')$mode = 'both';
+
+		// for under versin 1.0
+		if($TBorCm == 'comment') {
+			$TBorCm = 'c';
+		} elseif($TBorCm == 'trackback') {
+			$TBorCm = 't';
+		} elseif($TBorCm == 'both') {
+			$TBorCm = 'all';
+		}
+		
 		$b =& $manager->getBlog($CONF['DefaultBlog']);
 		$this->defaultblogurl = $b->getURL() ;
 		if(!$this->defaultblogurl)
@@ -54,6 +76,10 @@ class NP_CommentTree extends NucleusPlugin {
 		//format itemcnt
 		if ($itemcnt == '')
 			$itemcnt = 5;
+
+		if ($commentcnt == '')
+			$commentcnt = 4;
+
 		
 		$filter = trim($filter);
 		if($filter == 'current'){
@@ -76,7 +102,7 @@ class NP_CommentTree extends NucleusPlugin {
 		$latest_itemid= array();
 		
 		//get itemid which have comments
-		if ($mode == 'both' or $mode == 'comment') {
+		if ($TBorCm != 't') {
 		$query = 'SELECT citem, MAX(UNIX_TIMESTAMP(ctime)) as ctimest FROM '.sql_table('comment');
 		if($filter != ''){
 			$query .= " WHERE ".$filter;
@@ -91,8 +117,7 @@ class NP_CommentTree extends NucleusPlugin {
 		}
 		
 		//get itemid which have trackbacks
-		if ($mode == 'both' or $mode == 'trackback') {
-		if ($manager->pluginInstalled('NP_TrackBack') && $this->getOption(tbflag)=='yes'){
+		if ($manager->pluginInstalled('NP_TrackBack') && $TBorCm != 'c') {
 			$query = "SELECT t.tb_id, MAX(UNIX_TIMESTAMP(t.timestamp)) as ttimest FROM ".sql_table('plugin_tb')." t, ".sql_table('item')." i";
 			$query .= " WHERE t.tb_id=i.inumber";
 			if($this->blockable){
@@ -116,7 +141,6 @@ class NP_CommentTree extends NucleusPlugin {
 				}
 			}
 		}
-		}
 		
 		//sort itemid which have comment or trackbacks
 		krsort($latest_itemid);
@@ -132,12 +156,12 @@ class NP_CommentTree extends NucleusPlugin {
 			$itemtitle = strip_tags(trim($item['title']));
 			$itemtitle = shorten($itemtitle,$title_len,'..');
 			
-			$s_item = str_replace('%kind%', 'item', $this->getOption(s_items));
+			$s_item = str_replace('<%kind%>', 'item', $this->getOption(s_items));
 			echo $s_item."<a href=\"{$itemlink}\">$itemtitle</a>\n";
 			echo $this->getOption(s_lists)."\n";
 			
 			//get comments of this item
-			if ($mode == 'both' or $mode == 'comment') {
+			if ($TBorCm != 't') {
 			$query = 'SELECT cnumber, cbody, cuser, cmember, ctime, UNIX_TIMESTAMP(ctime) as ctimest FROM '.sql_table('comment').' WHERE citem='.$item['itemid'].' ORDER BY cnumber DESC LIMIT 0,'.($commentcnt + 1);
 			$res = mysql_query($query);
 			while($row = mysql_fetch_object($res)){
@@ -152,20 +176,19 @@ class NP_CommentTree extends NucleusPlugin {
 				if ($flg_quote == 'diff') $comment_len = $title_len - mb_strwidth($commentname.$ctst) -4;
 				else $comment_len = $title_len;
 				if ($comment_len >6)
-					$comment_str = str_replace('%content%', shorten(strip_tags(trim($row->cbody)), $comment_len, '..'), $comment_format);
+					$comment_str = str_replace('<%content%>', shorten(strip_tags(trim($row->cbody)), $comment_len, '..'), $comment_format);
 				else $comment_str = '';
-				$rep_from = array('%date%','%name%','%comment%');
+				$rep_from = array('<%date%>','<%name%>','<%comment%>');
 				$rep_to   = array($ctst, $commentname, $comment_str);
 				$item_element = str_replace($rep_from, $rep_to, $item_format);
 				
-				$s_items = str_replace('%kind%', 'comment', $this->getOption(s_items));
+				$s_items = str_replace('<%kind%>', 'comment', $this->getOption(s_items));
 				$ress[$row->ctimest] = $s_items. "<a href=\"{$itemlink}#c{$cid}\">$item_element</a>" .$this->getOption(e_items);
 			}
 			}
 			
 			//get trackbacks of this item
-			if ($mode == 'both' or $mode == 'trackback') {
-			if ($manager->pluginInstalled('NP_TrackBack') && $this->getOption(tbflag)=='yes'){
+			if ($manager->pluginInstalled('NP_TrackBack') && $TBorCm != 'c') {
 				$query = "SELECT title, blog_name, UNIX_TIMESTAMP(timestamp) as ttimest FROM ".sql_table('plugin_tb');
 				$query .= " WHERE tb_id=".$item['itemid'];
 				if($this->blockable){
@@ -180,16 +203,15 @@ class NP_CommentTree extends NucleusPlugin {
 					if ($flg_quote == 'diff') $comment_len = $title_len - mb_strwidth($blogname.$ctst) -4;
 					else $comment_len = $title_len;
 					if ($comment_len >6)
-						$comment_str = str_replace('%content%', shorten(strip_tags(trim($row->title)), $comment_len, '..'), $comment_format);
+						$comment_str = str_replace('<%content%>', shorten(strip_tags(trim($row->title)), $comment_len, '..'), $comment_format);
  					else $comment_str = '';
-					$rep_from = array('%date%','%name%','%comment%');
+					$rep_from = array('<%date%>','<%name%>','<%comment%>');
 					$rep_to   = array($ctst, $blogname, $comment_str);
 					$item_element = str_replace($rep_from, $rep_to, $item_format);
 					
-					$s_items = str_replace('%kind%', 'trackback', $this->getOption(s_items));
+					$s_items = str_replace('<%kind%>', 'trackback', $this->getOption(s_items));
 					$ress[$row->ttimest] = $s_items. "<a href=\"{$itemlink}#trackback\">$item_element</a>" .$this->getOption(e_items);
 				}
-			}
 			}
 			
 			//sort comment and trackbacks of this item
@@ -202,7 +224,7 @@ class NP_CommentTree extends NucleusPlugin {
 				echo $ress[$j]."\n";
 			}
 			if(count($ress) > $show_rescnt){
-				$s_items = str_replace('%kind%', 'more', $this->getOption(s_items));
+				$s_items = str_replace('<%kind%>', 'more', $this->getOption(s_items));
 				echo $s_items. "and more..." .$this->getOption(e_items)."\n";
 			}
 			
@@ -214,13 +236,18 @@ class NP_CommentTree extends NucleusPlugin {
 	}
 	
 	function checkTBVersion(){
-		$res = sql_query("SHOW FIELDS from ".sql_table('plugin_tb') );
-		$fieldnames = array();
-		while ($co = mysql_fetch_assoc($res)) {
-			$fieldnames[] = $co['Field'];
+		global $manager;
+		if($manager->pluginInstalled('NP_Trackback')){
+			$res = sql_query("SHOW FIELDS from ".sql_table('plugin_tb') );
+			$fieldnames = array();
+			while ($co = mysql_fetch_assoc($res)) {
+				$fieldnames[] = $co['Field'];
+			}
+			if(in_array('block',$fieldnames)) return TRUE;
+				return FALSE;
+		} else {
+			return FALSE;
 		}
-		if(in_array('block',$fieldnames)) return TRUE;
-		return FALSE;
 	}
 
 	function createGlobalItemLink($itemid, $extra = '') {
