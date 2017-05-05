@@ -10,7 +10,7 @@ class NP_CommentTree extends NucleusPlugin {
 	function getName() {return 'Comment Tree';}
 	function getAuthor(){return 'mas + nakahara21';}
 	function getURL(){return 'http://nucleus.fel-is.info/bb/viewtopic.php?t=127';}
-	function getVersion() {return '0.7';}
+	function getVersion() {return '0.75';}
 	function getDescription() {return 'latest comments (and trackbacks) - tree style';}
 	function supportsFeature($what) {
 		switch($what){
@@ -95,8 +95,14 @@ class NP_CommentTree extends NucleusPlugin {
 			$query .= " ORDER by ttimest DESC LIMIT 0,".intval($itemcnt);
 			$res = mysql_query($query);
 			while($row = mysql_fetch_object($res)){
-				if(!in_array($row->tb_id,$latest_itemid))
-				$latest_itemid[$row->ttimest]= $row->tb_id;
+				if($already = array_search($row->tb_id, $latest_itemid)){
+					if($row->ttimest > $already){
+						unset($latest_itemid[$already]);
+						$latest_itemid[$row->ttimest]= $row->tb_id;
+					}
+				}else{
+					$latest_itemid[$row->ttimest]= $row->tb_id;
+				}
 			}
 		}
 //_---------------------
