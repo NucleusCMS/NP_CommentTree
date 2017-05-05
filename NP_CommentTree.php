@@ -9,8 +9,8 @@ if (!function_exists('sql_table')){
 class NP_CommentTree extends NucleusPlugin {
 	function getName() {return 'Comment Tree';}
 	function getAuthor(){return 'mas + nakahara21';}
-	function getURL(){return 'http://neconnect.net/';}
-	function getVersion() {return '0.5';}
+	function getURL(){return 'http://nucleus.fel-is.info/bb/viewtopic.php?t=127';}
+	function getVersion() {return '0.6';}
 	function getDescription() {return 'latest comments (and trackbacks) - tree style';}
 	function supportsFeature($what) {
 		switch($what){
@@ -31,17 +31,27 @@ class NP_CommentTree extends NucleusPlugin {
 
 	function doSkinVar($skinType, $itemcnt = '5', $commentcnt = '4',$filter = '') {
 		global $member, $manager, $CONF, $blog;
+
+		$b =& $manager->getBlog($CONF['DefaultBlog']);
+		$this->defaultblogurl = $b->getURL() ;
+		if(!$this->defaultblogurl)
+			$this->defaultblogurl = $CONF['IndexURL'] ;
+		if ($blog)
+			$b =& $blog;
+		$blogid = $b->getID();
+
+/*
 		if ($blog)
 			$b =& $blog;
 		else
 			$b =& $manager->getBlog($CONF['DefaultBlog']);
 		$blogid = $b->getID();
-
 		if ($CONF['URLMode'] == 'pathinfo') {
 			 $blogurl = '' ;
 		}else{
 			 $blogurl = $b->getURL() ;
 		}
+*/
 		//format itemcnt
 		if ($itemcnt == '')
 			$itemcnt = 5;
@@ -100,10 +110,11 @@ class NP_CommentTree extends NucleusPlugin {
 
 		for($i=0;$i<$show_itemcnt;$i++){
 			$item =& $manager->getItem($latest_itemid[$i],0,0);
-			$itemlink = createItemLink($item['itemid'], '');
+//			$itemlink = createItemLink($item['itemid'], '');
+			$itemlink = $this->createGlobalItemLink($item['itemid'], '');
 			$itemtitle = $item['title'];
 			$itemtitle = shorten($itemtitle,20,'..');
-			echo $this->getOption(s_items)."<a href=\"".$blogurl.$itemlink."\">".$itemtitle."</a><br />\n";
+			echo $this->getOption(s_items)."<a href=\"".$itemlink."\">".$itemtitle."</a><br />\n";
 			
 			//get comments of this item
 			$query = 'SELECT cnumber, cuser, citem, cmember, ctime, UNIX_TIMESTAMP(ctime) as ctimest FROM '.sql_table('comment').' WHERE citem='.$item['itemid'].' ORDER BY cnumber DESC LIMIT 0,'.$commentcnt;
@@ -118,7 +129,7 @@ class NP_CommentTree extends NucleusPlugin {
 					$mem->readFromID(intval($row->cmember));
 					$myname = $mem->getDisplayName();
 				}
-				$ress[$row->ctimest] = "└ $myname <a href=\"".$blogurl.$itemlink."#c".$cid."\">".$ctst."</a><br />\n";
+				$ress[$row->ctimest] = "└ $myname <a href=\"".$itemlink."#c".$cid."\">".$ctst."</a><br />\n";
 			}
 
 			//get trackbacks of this item
@@ -132,7 +143,7 @@ class NP_CommentTree extends NucleusPlugin {
 					$ct = $row->ttimest;
 					$ctst = date("m/d", $ct);
 					$blogname = shorten($row->blog_name,10,'..');
-					$ress[$row->ttimest] = "└ [$blogname] <a href=\"".$blogurl.$itemlink."#trackback\">".$ctst."</a><br />\n";
+					$ress[$row->ttimest] = "└ [$blogname] <a href=\"".$itemlink."#trackback\">".$ctst."</a><br />\n";
 				}
 			}
 
@@ -153,6 +164,28 @@ class NP_CommentTree extends NucleusPlugin {
 			unset($ress);
 		}
 		echo $this->getOption(e_lists);
+	}
+
+	function createGlobalItemLink($itemid, $extra = '') {
+		global $CONF, $manager;
+
+		if ($CONF['URLMode'] == 'pathinfo'){
+			$link = $CONF['ItemURL'] . '/item/' . $itemid;
+		}else{
+			$blogid = getBlogIDFromItemID($itemid);
+			$b_tmp =& $manager->getBlog($blogid);
+			$blogurl = $b_tmp->getURL() ;
+			if(!$blogurl){
+				$blogurl = $this->defaultblogurl;
+			}
+			if(substr($blogurl, -4) != '.php'){
+				if(substr($blogurl, -1) != '/')
+					$blogurl .= '/';
+				$blogurl .= 'index.php';
+			}
+			$link = $blogurl . '?itemid=' . $itemid;
+		}
+		return addLinkParams($link, $extra);
 	}
 }
 ?>
