@@ -22,7 +22,7 @@ class NP_CommentTree extends NucleusPlugin {
 	function getName() {return 'Comment Tree';}
 	function getAuthor(){return 'mas + nakahara21 + taka + yu';}
 	function getURL(){return 'http://felis.jp/bb/viewtopic.php?t=127';}
-	function getVersion() {return '0.8';}
+	function getVersion() {return '0.82';}
 	function getDescription() {return 'latest comments (and trackbacks) - tree style';}
 	function supportsFeature($what) {
 		switch($what){
@@ -49,7 +49,7 @@ class NP_CommentTree extends NucleusPlugin {
 
 	function doSkinVar($skinType, $itemcnt = '5', $commentcnt = '4', $mode = 'both', $filter = '') {
 		global $member, $manager, $CONF, $blog;
-		
+		if($mode == '')$mode = 'both';
 		$b =& $manager->getBlog($CONF['DefaultBlog']);
 		$this->defaultblogurl = $b->getURL() ;
 		if(!$this->defaultblogurl)
@@ -70,7 +70,7 @@ class NP_CommentTree extends NucleusPlugin {
 			$filter = " cblog IN(".str_replace("/",",",$filter).")";
 		}elseif(strstr($filter,"<>")){
 			$filter = str_replace("<>","",$filter);
-			$filter = " cblog <>".str_replace("/"," or cblog<>",$filter);
+			$filter = " cblog <>".str_replace("/"," and cblog<>",$filter);
 		}
 		
 		$item_format    = $this->getOption('item_format');
