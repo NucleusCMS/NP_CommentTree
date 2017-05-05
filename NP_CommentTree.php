@@ -10,7 +10,7 @@ class NP_CommentTree extends NucleusPlugin {
 	function getName() {return 'Comment Tree';}
 	function getAuthor(){return 'mas + nakahara21';}
 	function getURL(){return 'http://neconnect.net/';}
-	function getVersion() {return '0.45';}
+	function getVersion() {return '0.5';}
 	function getDescription() {return 'latest comments (and trackbacks) - tree style';}
 	function supportsFeature($what) {
 		switch($what){
@@ -59,31 +59,29 @@ class NP_CommentTree extends NucleusPlugin {
 		
 //_---------------------
 		//get itemid which have comments
-		$query = 'SELECT distinct citem, UNIX_TIMESTAMP(ctime) as ctimest FROM '.sql_table('comment');
+		$query = 'SELECT citem, MAX(UNIX_TIMESTAMP(ctime)) as ctimest FROM '.sql_table('comment');
 		if($filter != ''){
 			$query .= " WHERE ".$filter;
 		}
 		$query .= ' GROUP BY citem';
-		$query .= ' ORDER BY cnumber DESC LIMIT 0,'.intval($itemcnt);
+		$query .= ' ORDER BY ctimest DESC LIMIT 0,'.intval($itemcnt);
 
 		$res = mysql_query($query);
-		$i = 0;
 		while($row = mysql_fetch_object($res)){
 			$latest_itemid[$row->ctimest]= $row->citem;
-			$i++;
 		}
 
 //_---------------------
 		//get itemid which have trackbacks
 		if ($manager->pluginInstalled('NP_TrackBack') && $this->getOption(tbflag)=='yes'){
-			$query = "SELECT distinct t.tb_id, UNIX_TIMESTAMP(t.timestamp) as ttimest FROM ".sql_table('plugin_tb')." t, ".sql_table('item')." i";
+			$query = "SELECT t.tb_id, MAX(UNIX_TIMESTAMP(t.timestamp)) as ttimest FROM ".sql_table('plugin_tb')." t, ".sql_table('item')." i";
 			$query .= " WHERE t.tb_id=i.inumber";
 			if($filter != ''){
 				$tfilter = str_replace("cblog", "i.iblog", $filter);
 				$query .= " and ".$tfilter;
 			}
 			$query .= ' GROUP BY t.tb_id';
-			$query .= " ORDER by t.timestamp DESC LIMIT 0,".intval($itemcnt);
+			$query .= " ORDER by ttimest DESC LIMIT 0,".intval($itemcnt);
 			$res = mysql_query($query);
 			while($row = mysql_fetch_object($res)){
 				$latest_itemid[$row->ttimest]= $row->tb_id;
@@ -91,8 +89,9 @@ class NP_CommentTree extends NucleusPlugin {
 		}
 //_---------------------
 		//sort itemid which have comment or trackbacks
-		krsort($latest_itemid);
+		ksort($latest_itemid);
 		$latest_itemid = array_unique($latest_itemid);
+		krsort($latest_itemid);
 		$latest_itemid = array_values($latest_itemid);
 		$show_itemcnt = min(intval($itemcnt),count($latest_itemid));
 	
@@ -145,6 +144,9 @@ class NP_CommentTree extends NucleusPlugin {
 			// display comments and trackbacks
 			for ($j=0;$j<$show_rescnt;$j++){
 				echo $ress[$j];
+			}
+			if(count($ress) > $show_rescnt){
+				echo "└ and more...<br />\n";
 			}
 
 			echo $this->getOption(e_items)."\n";
