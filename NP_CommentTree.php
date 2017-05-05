@@ -1,16 +1,4 @@
 <?php
-/*
-	NP_CommentTree Ver0.8
-
-	USAGE
-	-----
-	<%CommentTree()%>
-	<%CommentTree(5,4)%> //item amount, comment amount
-	<%CommentTree(5,4,comment)%> //comments only
-	<%CommentTree(5,4,trackback)%> //trackbacks only
-
-*/
-
 // plugin needs to work on Nucleus versions <=2.0 as well
 if (!function_exists('sql_table')){
 	function sql_table($name) {
@@ -21,8 +9,8 @@ if (!function_exists('sql_table')){
 class NP_CommentTree extends NucleusPlugin {
 	function getName() {return 'Comment Tree';}
 	function getAuthor(){return 'mas + nakahara21 + taka + yu';}
-	function getURL(){return 'http://felis.jp/bb/viewtopic.php?t=127';}
-	function getVersion() {return '0.82';}
+	function getURL(){return 'http://japan.nucleuscms.org/bb/viewtopic.php?t=127';}
+	function getVersion() {return '0.9';}
 	function getDescription() {return 'latest comments (and trackbacks) - tree style';}
 	function supportsFeature($what) {
 		switch($what){
@@ -131,8 +119,9 @@ class NP_CommentTree extends NucleusPlugin {
 		
 		for($i=0;$i<$show_itemcnt;$i++){
 			$item =& $manager->getItem($latest_itemid[$i],0,0);
-			$itemlink = $this->createGlobalItemLink($item['itemid'], '');
-			$itemtitle = trim($item['title']);
+//			$itemlink = $this->createGlobalItemLink($item['itemid'], '');
+			$itemlink = createItemLink($item['itemid'], '');
+			$itemtitle = strip_tags(trim($item['title']));
 			$itemtitle = shorten($itemtitle,$title_len,'..');
 			
 			$s_item = str_replace('%kind%', 'item', $this->getOption(s_items));
