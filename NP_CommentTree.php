@@ -116,17 +116,17 @@ class NP_CommentTree extends NucleusPlugin {
         
         //get itemid which have comments
         if ($TBorCm != 't') {
-        $query = 'SELECT citem, MAX(UNIX_TIMESTAMP(ctime)) as ctimest FROM '.sql_table('comment');
-        if($filter != ''){
-            $query .= " WHERE ".$filter;
-        }
-        $query .= ' GROUP BY citem';
-        $query .= ' ORDER BY ctimest DESC LIMIT 0,'.intval($itemcnt);
-
-        $res = sql_query($query);
-        while($row = sql_fetch_object($res)){
-            $latest_itemid[$row->ctimest]= $row->citem;
-        }
+            $query = 'SELECT citem, MAX(UNIX_TIMESTAMP(ctime)) as ctimest FROM '.sql_table('comment');
+            if($filter != ''){
+                $query .= " WHERE ".$filter;
+            }
+            $query .= ' GROUP BY citem';
+            $query .= ' ORDER BY ctimest DESC LIMIT 0,'.intval($itemcnt);
+    
+            $res = sql_query($query);
+            while($row = sql_fetch_object($res)){
+                $latest_itemid[$row->ctimest]= $row->citem;
+            }
         }
         
         //get itemid which have trackbacks
@@ -176,50 +176,50 @@ class NP_CommentTree extends NucleusPlugin {
             //get comments of this item
             if ($TBorCm != 't') {
 
-            $query = 'SELECT'
-                   . ' cnumber as commentid,'
-                   . ' cuser   as commentator,'
-                   . ' cbody   as commentbody,'
-                   . ' citem   as itemid,'
-                   . ' cmember as memberid,'
-                   . ' UNIX_TIMESTAMP(ctime)  as ctimest'
-                   . ' FROM ' . sql_table('comment');
-            $query .= ' WHERE citem='.$item['itemid'];
-            $query .= ' ORDER BY cnumber DESC LIMIT 0,'.($commentcnt + 1);
-
-            $res = sql_query($query);
-            while($row = sql_fetch_object($res)){
-                $content = (array)$row;
-                
-                $content['commentdate'] = strftime($cmdateformat, $content['ctimest']);
-
-                if (!empty($row->memberid)) {
-                        $mem = new MEMBER;
-                        $mem->readFromID(intval($content['memberid']));
-                        $content['commentator'] = shorten($mem->getRealName(),$nameLength,$toadd);
-                } else {
-                    $content['commentator'] = shorten($content['commentator'],$nameLength,$toadd);
+                $query = 'SELECT'
+                       . ' cnumber as commentid,'
+                       . ' cuser   as commentator,'
+                       . ' cbody   as commentbody,'
+                       . ' citem   as itemid,'
+                       . ' cmember as memberid,'
+                       . ' UNIX_TIMESTAMP(ctime)  as ctimest'
+                       . ' FROM ' . sql_table('comment');
+                $query .= ' WHERE citem='.$item['itemid'];
+                $query .= ' ORDER BY cnumber DESC LIMIT 0,'.($commentcnt + 1);
+    
+                $res = sql_query($query);
+                while($row = sql_fetch_object($res)){
+                    $content = (array)$row;
+                    
+                    $content['commentdate'] = strftime($cmdateformat, $content['ctimest']);
+    
+                    if (!empty($row->memberid)) {
+                            $mem = new MEMBER;
+                            $mem->readFromID(intval($content['memberid']));
+                            $content['commentator'] = shorten($mem->getRealName(),$nameLength,$toadd);
+                    } else {
+                        $content['commentator'] = shorten($content['commentator'],$nameLength,$toadd);
+                    }
+                    
+                    if ($flg_quote == 'diff') {
+                        $bodyLength = $titleLength - mb_strwidth($content['commentator'].$content['commentdate'].strip_tags($this->getOption('cmttemplate')));
+                    } else {
+                        $bodyLength = $titleLength;
+                    }
+                    $commentbody = strip_tags($content['commentbody']);
+                    $commentbody = htmlspecialchars($commentbody, ENT_QUOTES);
+                    $commentbody = shorten($commentbody, $bodyLength, $toadd);
+                    $content['commentbody'] = $commentbody;
+                    $content['itemlink'] = $itemlink;
+                    $ress[$row->ctimest] = TEMPLATE::fill($this->getOption('cmttemplate'), $content);
+    
                 }
-                
-                if ($flg_quote == 'diff') {
-                    $bodyLength = $titleLength - mb_strwidth($content['commentator'].$content['commentdate'].strip_tags($this->getOption('cmttemplate')));
-                } else {
-                    $bodyLength = $titleLength;
-                }
-                $commentbody = strip_tags($content['commentbody']);
-                $commentbody = htmlspecialchars($commentbody, ENT_QUOTES);
-                $commentbody = shorten($commentbody, $bodyLength, $toadd);
-                $content['commentbody'] = $commentbody;
-                $content['itemlink'] = $itemlink;
-                $ress[$row->ctimest] = TEMPLATE::fill($this->getOption('cmttemplate'), $content);
-
-            }
             }
             
             //get trackbacks of this item
             if ($manager->pluginInstalled('NP_TrackBack') && $TBorCm != 'c') {
 
-            $query = 'SELECT'
+                $query = 'SELECT'
                    . ' id as tbid,'
                    . ' title as entrytitle,'
                    . ' blog_name as blogname,'
