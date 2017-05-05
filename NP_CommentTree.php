@@ -131,7 +131,7 @@ class NP_CommentTree extends NucleusPlugin {
 		$query .= ' ORDER BY ctimest DESC LIMIT 0,'.intval($itemcnt);
 
 		$res = sql_query($query);
-		while($row = mysql_fetch_object($res)){
+		while($row = sql_fetch_object($res)){
 			$latest_itemid[$row->ctimest]= $row->citem;
 		}
 		}
@@ -150,7 +150,7 @@ class NP_CommentTree extends NucleusPlugin {
 			$query .= ' GROUP BY t.tb_id';
 			$query .= " ORDER by ttimest DESC LIMIT 0,".intval($itemcnt);
 			$res = sql_query($query);
-			while($row = mysql_fetch_object($res)){
+			while($row = sql_fetch_object($res)){
 				if($already = array_search($row->tb_id, $latest_itemid)){
 					if($row->ttimest > $already){
 						unset($latest_itemid[$already]);
@@ -195,7 +195,7 @@ class NP_CommentTree extends NucleusPlugin {
 			$query .= ' ORDER BY cnumber DESC LIMIT 0,'.($commentcnt + 1);
 
 			$res = sql_query($query);
-			while($row = mysql_fetch_object($res)){
+			while($row = sql_fetch_object($res)){
 				$content = (array)$row;
 				
 				$content['commentdate'] = strftime($cmdateformat, $content['ctimest']);
@@ -239,7 +239,7 @@ class NP_CommentTree extends NucleusPlugin {
 				$query .= " ORDER by timestamp DESC LIMIT 0,".($commentcnt + 1);
 
 				$tbs = sql_query($query);
-				while($row = mysql_fetch_object($tbs)) {
+				while($row = sql_fetch_object($tbs)) {
 					$content = (array)$row;
 					$content['tbdate']     = strftime($tbdateformat, $content['ttimest']);
 					$content['blogname'] = shorten($content['blogname'],$nameLength,$toadd);
@@ -284,7 +284,7 @@ class NP_CommentTree extends NucleusPlugin {
 	function checkTBVersion(){
 		$res = sql_query('SHOW FIELDS FROM ' . sql_table('plugin_tb') );
 		$fieldnames = array();
-		while ($co = mysql_fetch_assoc($res)) {
+		while ($co = sql_fetch_assoc($res)) {
 			$fieldnames[] = $co['Field'];
 		}
 		if (in_array('block', $fieldnames)) {
