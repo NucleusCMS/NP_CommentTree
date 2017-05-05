@@ -10,7 +10,7 @@ class NP_CommentTree extends NucleusPlugin {
 	function getName() {return 'Comment Tree';}
 	function getAuthor(){return 'mas + nakahara21 + taka + yu';}
 	function getURL(){return 'http://japan.nucleuscms.org/bb/viewtopic.php?t=127';}
-	function getVersion() {return '0.9';}
+	function getVersion() {return '1.0';}
 	function getDescription() {return 'latest comments (and trackbacks) - tree style';}
 	function supportsFeature($what) {
 		switch($what){
@@ -33,6 +33,11 @@ class NP_CommentTree extends NucleusPlugin {
 		$this->createOption('title_len','Item title Length.','text','28');
 		$this->createOption('name_len','Name Length.','text','14');
 		$this->createOption('flg_quote','Comment Length.','select','diff','Item title - name length|diff|Same as title length|title');
+	}
+
+	function init(){
+		$this->blockable = 0;
+		if($this->checkTBVersion()) $this->blockable = 1;
 	}
 
 	function doSkinVar($skinType, $itemcnt = '5', $commentcnt = '4', $mode = 'both', $filter = '') {
@@ -90,6 +95,9 @@ class NP_CommentTree extends NucleusPlugin {
 		if ($manager->pluginInstalled('NP_TrackBack') && $this->getOption(tbflag)=='yes'){
 			$query = "SELECT t.tb_id, MAX(UNIX_TIMESTAMP(t.timestamp)) as ttimest FROM ".sql_table('plugin_tb')." t, ".sql_table('item')." i";
 			$query .= " WHERE t.tb_id=i.inumber";
+			if($this->blockable){
+				$query .= " and t.block=0";
+			}
 			if($filter != ''){
 				$tfilter = str_replace("cblog", "i.iblog", $filter);
 				$query .= " and ".$tfilter;
@@ -160,6 +168,9 @@ class NP_CommentTree extends NucleusPlugin {
 			if ($manager->pluginInstalled('NP_TrackBack') && $this->getOption(tbflag)=='yes'){
 				$query = "SELECT title, blog_name, UNIX_TIMESTAMP(timestamp) as ttimest FROM ".sql_table('plugin_tb');
 				$query .= " WHERE tb_id=".$item['itemid'];
+				if($this->blockable){
+					$query .= " and block=0";
+				}
 				$query .= " ORDER by timestamp DESC LIMIT 0,".($commentcnt + 1);
 
 				$tbs = mysql_query($query);
@@ -202,6 +213,16 @@ class NP_CommentTree extends NucleusPlugin {
 		echo $this->getOption(e_lists);
 	}
 	
+	function checkTBVersion(){
+		$res = sql_query("SHOW FIELDS from ".sql_table('plugin_tb') );
+		$fieldnames = array();
+		while ($co = mysql_fetch_assoc($res)) {
+			$fieldnames[] = $co['Field'];
+		}
+		if(in_array('block',$fieldnames)) return TRUE;
+		return FALSE;
+	}
+
 	function createGlobalItemLink($itemid, $extra = '') {
 		global $CONF, $manager;
 		
