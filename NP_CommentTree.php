@@ -14,7 +14,7 @@ class NP_CommentTree extends NucleusPlugin {
 	function supportsFeature($what) { return (int)($what=='SqlTablePrefix'); }
 	function getDescription() {
 		// include language file for this plugin 
-		$language = ereg_replace( '[\\|/]', '', getLanguageName()); 
+		$language = str_replace( array('/','\\'), '', getLanguageName()); 
 		if (file_exists($this->getDirectory() . $language . '.php')) {
 			include_once($this->getDirectory() . $language . '.php'); 
 		} else {
@@ -26,7 +26,7 @@ class NP_CommentTree extends NucleusPlugin {
 	
 	function install () {
 		// include language file for this plugin 
-		$language = ereg_replace( '[\\|/]', '', getLanguageName()); 
+		$language = str_replace( array('/','\\'), '', getLanguageName()); 
 		if (file_exists($this->getDirectory() . $language . '.php')) {
 			include_once($this->getDirectory() . $language . '.php'); 
 		} else {
