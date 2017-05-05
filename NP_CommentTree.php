@@ -1,11 +1,4 @@
 <?php
-// plugin needs to work on Nucleus versions <=2.0 as well
-if (!function_exists('sql_table')){
-	function sql_table($name) {
-		return 'nucleus_' . $name;
-	}
-}
-
 class NP_CommentTree extends NucleusPlugin {
 	function getName() {return 'Comment Tree';}
 	function getAuthor(){return 'mas + nakahara21 + taka + yu';}
