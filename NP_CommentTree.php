@@ -10,7 +10,7 @@ class NP_CommentTree extends NucleusPlugin {
 	function getName() {return 'Comment Tree';}
 	function getAuthor(){return 'mas + nakahara21';}
 	function getURL(){return 'http://nucleus.fel-is.info/bb/viewtopic.php?t=127';}
-	function getVersion() {return '0.6';}
+	function getVersion() {return '0.7';}
 	function getDescription() {return 'latest comments (and trackbacks) - tree style';}
 	function supportsFeature($what) {
 		switch($what){
@@ -67,6 +67,7 @@ class NP_CommentTree extends NucleusPlugin {
 			$filter = " cblog <>".str_replace("/"," or cblog<>",$filter);
 		}
 		
+			$latest_itemid= array();
 //_---------------------
 		//get itemid which have comments
 		$query = 'SELECT citem, MAX(UNIX_TIMESTAMP(ctime)) as ctimest FROM '.sql_table('comment');
@@ -94,13 +95,14 @@ class NP_CommentTree extends NucleusPlugin {
 			$query .= " ORDER by ttimest DESC LIMIT 0,".intval($itemcnt);
 			$res = mysql_query($query);
 			while($row = mysql_fetch_object($res)){
+				if(!in_array($row->tb_id,$latest_itemid))
 				$latest_itemid[$row->ttimest]= $row->tb_id;
 			}
 		}
 //_---------------------
 		//sort itemid which have comment or trackbacks
-		ksort($latest_itemid);
-		$latest_itemid = array_unique($latest_itemid);
+//		ksort($latest_itemid);
+//		$latest_itemid = array_unique($latest_itemid);
 		krsort($latest_itemid);
 		$latest_itemid = array_values($latest_itemid);
 		$show_itemcnt = min(intval($itemcnt),count($latest_itemid));
