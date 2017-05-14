@@ -3,7 +3,7 @@ class NP_CommentTree extends NucleusPlugin {
     function getName() {return 'Comment Tree';}
     function getAuthor(){return 'mas + nakahara21 + taka + yu';}
     function getURL(){return 'http://japan.nucleuscms.org/bb/viewtopic.php?t=127';}
-    function getVersion() {return '2.1';}
+    function getVersion() {return '2.2';}
     function supportsFeature($what) { return (int)($what=='SqlTablePrefix'); }
     function getDescription() {
         // include language file for this plugin 
@@ -207,7 +207,7 @@ class NP_CommentTree extends NucleusPlugin {
                         $bodyLength = $titleLength;
                     }
                     $commentbody = strip_tags($content['commentbody']);
-                    $commentbody = htmlspecialchars($commentbody, ENT_QUOTES);
+                    $commentbody = hsc($commentbody);
                     $commentbody = shorten($commentbody, $bodyLength, $toadd);
                     $content['commentbody'] = $commentbody;
                     $content['itemlink'] = $itemlink;
@@ -244,7 +244,7 @@ class NP_CommentTree extends NucleusPlugin {
                     }
 
                     $entrytitle = strip_tags($content['entrytitle']);
-                    $entrytitle = htmlspecialchars($entrytitle, ENT_QUOTES);
+                    $entrytitle = hsc($entrytitle);
                     $entrytitle = ($bodyLength > 0) ? shorten($entrytitle, $bodyLength, $toadd) : "";
                     $content['entrytitle'] = $entrytitle;
                     $content['itemlink'] = $itemlink;
