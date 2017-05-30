@@ -156,12 +156,13 @@ class NP_CommentTree extends NucleusPlugin {
         }
         
         //sort itemid which have comment or trackbacks
-        krsort((array)$latest_itemid);
+        krsort($latest_itemid);
         $latest_itemid = array_values((array)$latest_itemid);
         $show_itemcnt = min(intval($itemcnt),count($latest_itemid));
         
         echo $this->getOption(listhead);
         
+        $ress = array();
         for($i=0;$i<$show_itemcnt;$i++){
             $item =& $manager->getItem($latest_itemid[$i],0,0);
 //            $itemlink = $this->createGlobalItemLink($item['itemid'], '');
@@ -253,7 +254,7 @@ class NP_CommentTree extends NucleusPlugin {
             }
             
             //sort comment and trackbacks of this item
-            krsort((array)$ress);
+            krsort($ress);
             $ress = array_values((array)$ress);
             $show_rescnt = min(intval($commentcnt),count($ress));
             
